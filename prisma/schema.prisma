@@ -8,8 +8,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
-
 //////////////////////////////////////////////////////
 // ENUMS
 //////////////////////////////////////////////////////
@@ -26,7 +24,6 @@ enum ReviewStatus {
   Rejected
 }
 
-
 enum TutorStatus {
   Active
   Inactive
@@ -37,20 +34,20 @@ enum TutorStatus {
 //////////////////////////////////////////////////////
 
 model TutorProfile {
-  id          String      @id @default(uuid())
-  userId      String      @unique   // will link with better-auth user later
-  bio         String?
-  hourlyRate  Float
-  rating      Float       @default(0)
-  status      TutorStatus @default(Active)
+  id         String      @id @default(uuid())
+  userId     String      @unique // will link with better-auth user later
+  bio        String?
+  hourlyRate Float
+  rating     Float       @default(0)
+  status     TutorStatus @default(Active)
 
   subjects     TutorSubject[]
   availability Availability[]
   bookings     Booking[]
   reviews      Review[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([rating])
   @@index([status])
@@ -58,10 +55,10 @@ model TutorProfile {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String   @unique
+  id   String @id @default(uuid())
+  name String @unique
 
-  subjects  TutorSubject[]
+  subjects TutorSubject[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,11 +71,11 @@ model TutorSubject {
   tutorId    String
   categoryId String
 
-  tutor      TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
-  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tutor    TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([tutorId, categoryId])
   @@index([categoryId])
@@ -92,7 +89,7 @@ model Availability {
   start   String
   end     String
 
-  tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  tutor TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,17 +99,17 @@ model Availability {
 }
 
 model Booking {
-  id         String        @id @default(uuid())
-  studentId  String        // better-auth user id later
-  tutorId    String
-  date       DateTime
-  status     BookingStatus @default(Pending)
+  id        String        @id @default(uuid())
+  studentId String // better-auth user id later
+  tutorId   String
+  date      DateTime
+  status    BookingStatus @default(Pending)
 
-  tutor      TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
-  review     Review?
+  tutor  TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  review Review?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([studentId])
   @@index([tutorId])
@@ -125,23 +122,23 @@ model Booking {
 //////////////////////////////////////////////////////
 
 model Review {
-  id        String   @id @default(uuid())
-  rating    Int
-  comment   String   @db.Text
+  id      String @id @default(uuid())
+  rating  Int
+  comment String @db.Text
 
-  studentId String   // better-auth user id
+  studentId String // better-auth user id
   tutorId   String
-  bookingId String   @unique
+  bookingId String @unique
 
   // 🔁 Nested Reply System
-  parentId  String?
-  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Review[] @relation("ReviewReplies")
+  parentId String?
+  parent   Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Review[] @relation("ReviewReplies")
 
-  status    ReviewStatus @default(Approved)
+  status ReviewStatus @default(Approved)
 
-  tutor     TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
-  booking   Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  booking Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,4 +147,71 @@ model Review {
   @@index([studentId])
   @@index([parentId])
   @@map("reviews")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          String?   @default("User")
+  phone         String?
+  status        String?   @default("Active")
+  tutorStatus   String?
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

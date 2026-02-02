@@ -7,3 +7,147 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum BookingStatus {
+  Pending
+  Confirmed
+  Completed
+  Cancelled
+}
+
+enum ReviewStatus {
+  Approved
+  Rejected
+}
+
+
+enum TutorStatus {
+  Active
+  Inactive
+}
+
+//////////////////////////////////////////////////////
+// 🎓 CORE TABLES (WITHOUT AUTH TABLES)
+//////////////////////////////////////////////////////
+
+model TutorProfile {
+  id          String      @id @default(uuid())
+  userId      String      @unique   // will link with better-auth user later
+  bio         String?
+  hourlyRate  Float
+  rating      Float       @default(0)
+  status      TutorStatus @default(Active)
+
+  subjects     TutorSubject[]
+  availability Availability[]
+  bookings     Booking[]
+  reviews      Review[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([rating])
+  @@index([status])
+  @@map("tutor_profiles")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+
+  subjects  TutorSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model TutorSubject {
+  id         String @id @default(uuid())
+  tutorId    String
+  categoryId String
+
+  tutor      TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tutorId, categoryId])
+  @@index([categoryId])
+  @@map("tutor_subjects")
+}
+
+model Availability {
+  id      String @id @default(uuid())
+  tutorId String
+  day     String
+  start   String
+  end     String
+
+  tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tutorId])
+  @@map("availability")
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  studentId  String        // better-auth user id later
+  tutorId    String
+  date       DateTime
+  status     BookingStatus @default(Pending)
+
+  tutor      TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  review     Review?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([tutorId])
+  @@index([status])
+  @@map("bookings")
+}
+
+//////////////////////////////////////////////////////
+// ⭐ REVIEW SYSTEM (WITH REPLIES)
+//////////////////////////////////////////////////////
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String   @db.Text
+
+  studentId String   // better-auth user id
+  tutorId   String
+  bookingId String   @unique
+
+  // 🔁 Nested Reply System
+  parentId  String?
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Review[] @relation("ReviewReplies")
+
+  status    ReviewStatus @default(Approved)
+
+  tutor     TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  booking   Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tutorId])
+  @@index([studentId])
+  @@index([parentId])
+  @@map("reviews")
+}

@@ -10,7 +10,7 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: 'API is running',
+    message: 'SkillBridge API is running',
   });
 });
 

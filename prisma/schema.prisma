@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,22 +11,23 @@ datasource db {
 // ENUMS
 //////////////////////////////////////////////////////
 
-enum BookingStatus {
-  Pending
-  Confirmed
-  Completed
-  Cancelled
+enum BOOKING_STATUS {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
 }
 
-enum ReviewStatus {
-  Approved
-  Rejected
+enum REVIEW_STATUS {
+  APPROVED
+  REJECTED
 }
 
-enum TutorStatus {
-  Active
-  Inactive
+enum TUTOR_STATUS {
+  ACTIVE
+  INACTIVE
 }
+
 
 //////////////////////////////////////////////////////
 // 🎓 CORE TABLES (WITHOUT AUTH TABLES)
@@ -39,7 +39,7 @@ model TutorProfile {
   bio        String?
   hourlyRate Float
   rating     Float       @default(0)
-  status     TutorStatus @default(Active)
+  status     TUTOR_STATUS @default(ACTIVE)
 
   subjects     TutorSubject[]
   availability Availability[]
@@ -103,7 +103,7 @@ model Booking {
   studentId String // better-auth user id later
   tutorId   String
   date      DateTime
-  status    BookingStatus @default(Pending)
+  status    BOOKING_STATUS @default(PENDING)
 
   tutor  TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
   review Review?
@@ -135,7 +135,7 @@ model Review {
   parent   Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Review[] @relation("ReviewReplies")
 
-  status ReviewStatus @default(Approved)
+  status REVIEW_STATUS @default(APPROVED)
 
   tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
   booking Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -157,9 +157,9 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  role          String?   @default("User")
+  role          String?   @default("USER")
   phone         String?
-  status        String?   @default("Active")
+  status        String?   @default("ACTIVE")
   tutorStatus   String?
   sessions      Session[]
   accounts      Account[]

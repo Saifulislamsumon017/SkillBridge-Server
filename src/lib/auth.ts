@@ -3,6 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from './prisma';
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
+import { UserRole } from '../constants/role';
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
@@ -23,10 +24,23 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
-      role: { type: 'string', defaultValue: 'User', required: false },
-      phone: { type: 'string', required: false },
-      status: { type: 'string', defaultValue: 'Active', required: false },
-      tutorStatus: { type: 'string', required: false },
+      role: {
+        type: 'string',
+        defaultValue: UserRole.USER,
+      },
+      phone: {
+        type: 'string',
+        required: false,
+      },
+      status: {
+        type: 'string',
+        defaultValue: 'ACTIVE',
+        required: false,
+      },
+      tutorStatus: {
+        type: 'string',
+        required: false,
+      },
     },
   },
 
@@ -39,13 +53,14 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
+
     sendVerificationEmail: async ({ user, token }) => {
-      const verificationUrl = `${env.APP_URL}/verify-email?token=${token}`;
+      const verificationUrl = `${env.BETTER_AUTH_URL}/api/auth/verify-email?token=${token}`;
 
       await transporter.sendMail({
-        from: '"Prisma Blog" <noreply@prismablog.com>',
+        from: '"SkillBridge" <noreply@skillbridge.com>',
         to: user.email,
-        subject: 'Verify your email',
+        subject: 'Verify your SkillBridge account',
         html: `<h2>Hello ${user.name}</h2>
                <p>Click below to verify your email:</p>
                <a href="${verificationUrl}">Verify Email</a>`,

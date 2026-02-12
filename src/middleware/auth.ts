@@ -1,24 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { auth as betterAuth } from '../lib/auth';
-
-export enum UserRole {
-  User = 'User',
-  Admin = 'Admin',
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        name: string;
-        role: string;
-        emailVerified: boolean;
-      };
-    }
-  }
-}
+import { UserRole } from '../constants/role';
 
 const auth = (...roles: UserRole[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -27,19 +9,15 @@ const auth = (...roles: UserRole[]) => {
         headers: req.headers as any,
       });
 
-      if (!session) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-
-      if (!session.user.emailVerified) {
+      if (!session) return res.status(401).json({ message: 'Unauthorized' });
+      if (!session.user.emailVerified)
         return res.status(403).json({ message: 'Verify your email first' });
-      }
 
       req.user = {
         id: session.user.id,
         email: session.user.email,
         name: session.user.name,
-        role: session.user.role as string,
+        role: session.user.role as UserRole,
         emailVerified: session.user.emailVerified,
       };
 

@@ -1,3 +1,4 @@
+// lib/auth.ts
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { prisma } from './prisma';
@@ -5,6 +6,7 @@ import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import { UserRole } from '../constants/role';
 
+// Nodemailer transporter
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
@@ -27,6 +29,7 @@ export const auth = betterAuth({
       role: {
         type: 'string',
         defaultValue: UserRole.USER,
+        required: false,
       },
       phone: {
         type: 'string',
@@ -61,9 +64,11 @@ export const auth = betterAuth({
         from: '"SkillBridge" <noreply@skillbridge.com>',
         to: user.email,
         subject: 'Verify your SkillBridge account',
-        html: `<h2>Hello ${user.name}</h2>
-               <p>Click below to verify your email:</p>
-               <a href="${verificationUrl}">Verify Email</a>`,
+        html: `
+          <h2>Hello ${user.name}</h2>
+          <p>Click the link below to verify your email:</p>
+          <a href="${verificationUrl}">Verify Email</a>
+        `,
       });
     },
   },
@@ -75,5 +80,9 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
+    // github: {
+    //   clientId: env.GITHUB_CLIENT_ID,
+    //   clientSecret: env.GITHUB_CLIENT_SECRET,
+    // },
   },
 });

@@ -2,18 +2,8 @@
 import { Request, Response } from 'express';
 import { TutorService, TutorFilters } from './tutor.service';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    emailVerified: boolean;
-  };
-}
-
 // Get all tutors
-const getAllTutors = async (req: AuthenticatedRequest, res: Response) => {
+const getAllTutors = async (req: Request, res: Response) => {
   try {
     const filters: TutorFilters = {};
 
@@ -33,7 +23,7 @@ const getAllTutors = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 // Get tutor by ID
-const getTutorById = async (req: AuthenticatedRequest, res: Response) => {
+const getTutorById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const tutor = await TutorService.getTutorById(id as string);
@@ -46,7 +36,7 @@ const getTutorById = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 // Update Tutor Profile
-const updateTutorProfile = async (req: AuthenticatedRequest, res: Response) => {
+const updateTutorProfile = async (req: Request, res: Response) => {
   try {
     const tutorId = req.user?.id;
     if (!tutorId)
@@ -63,7 +53,7 @@ const updateTutorProfile = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 // Update Availability
-const updateAvailability = async (req: AuthenticatedRequest, res: Response) => {
+const updateAvailability = async (req: Request, res: Response) => {
   try {
     const tutorId = req.user?.id;
     if (!tutorId)

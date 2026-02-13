@@ -1,70 +1,52 @@
-import { TUTOR_STATUS } from '../../../generated/prisma/enums';
 import { prisma } from '../../lib/prisma';
-import { ICreateTutorProfile, IUpdateTutorProfile } from './tutor.interface';
 
-/**
- * Create Tutor Profile
- */
-const createTutorProfile = async (
-  userId: string,
-  payload: ICreateTutorProfile,
-) => {
-  const existingTutor = await prisma.tutorProfile.findUnique({
-    where: { userId },
-  });
+export interface TutorFilters {
+  categoryId?: string;
+  minRate?: number;
+  maxRate?: number;
+  minRating?: number;
+}
 
-  if (existingTutor) {
-    throw new Error('Tutor profile already exists');
-  }
-
-  const data = {
-    userId,
-    hourlyRate: payload.hourlyRate,
-    bio: payload.bio as string,
+const getAllTutors = async (filters: TutorFilters) => {
+  const where: any = {
+    status: 'ACTIVE',
   };
 
-  const result = await prisma.tutorProfile.create({
-    data,
-  });
+  // Hourly Rate Filter
+  if (filters.minRate || filters.maxRate) {
+    where.hourlyRate = {};
+    if (filters.minRate) where.hourlyRate.gte = filters.minRate;
+    if (filters.maxRate) where.hourlyRate.lte = filters.maxRate;
+  }
 
-  // update user role to TUTOR
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      role: 'TUTOR',
-      tutorStatus: TUTOR_STATUS.ACTIVE,
-    },
-  });
+  // Rating Filter
+  if (filters.minRating) {
+    where.rating = { gte: filters.minRating };
+  }
 
-  return result;
-};
+  // Category Filter
+  if (filters.categoryId) {
+    where.subjects = {
+      some: {
+        categoryId: filters.categoryId,
+      },
+    };
+  }
 
-/**
- * Get All Tutors
- */
-const getAllTutors = async () => {
-  const result = await prisma.tutorProfile.findMany({
-    where: {
-      status: TUTOR_STATUS.ACTIVE,
-    },
+  return await prisma.tutorProfile.findMany({
+    where,
     include: {
       subjects: {
         include: { category: true },
       },
+      availability: true,
     },
-    orderBy: {
-      rating: 'desc',
-    },
+    orderBy: { rating: 'desc' },
   });
-
-  return result;
 };
 
-/**
- * Get Single Tutor
- */
-const getSingleTutor = async (id: string) => {
-  const result = await prisma.tutorProfile.findUnique({
+const getTutorById = async (id: string) => {
+  return await prisma.tutorProfile.findUniqueOrThrow({
     where: { id },
     include: {
       subjects: { include: { category: true } },
@@ -72,55 +54,40 @@ const getSingleTutor = async (id: string) => {
       reviews: true,
     },
   });
-
-  if (!result) {
-    throw new Error('Tutor not found');
-  }
-
-  return result;
 };
 
-/**
- * Update Tutor
- */
-const updateTutorProfile = async (id: string, payload: IUpdateTutorProfile) => {
-  const data: any = {};
-
-  if (payload.bio) {
-    data.bio = payload.bio;
-  }
-
-  if (payload.hourlyRate) {
-    data.hourlyRate = payload.hourlyRate;
-  }
-
-  if (payload.status) {
-    data.status = payload.status;
-  }
-
-  const result = await prisma.tutorProfile.update({
-    where: { id },
+const updateTutorProfile = async (
+  tutorId: string,
+  data: Partial<{
+    bio: string;
+    hourlyRate: number;
+    status: 'ACTIVE' | 'INACTIVE';
+  }>,
+) => {
+  return await prisma.tutorProfile.update({
+    where: { id: tutorId },
     data,
   });
-
-  return result;
 };
 
-/**
- * Delete Tutor
- */
-const deleteTutorProfile = async (id: string) => {
-  const result = await prisma.tutorProfile.delete({
-    where: { id },
+const updateAvailability = async (
+  tutorId: string,
+  slots: { day: string; start: string; end: string }[],
+) => {
+  // Delete old slots first
+  await prisma.availability.deleteMany({ where: { tutorId } });
+
+  // Insert new slots
+  const created = await prisma.availability.createMany({
+    data: slots.map(s => ({ ...s, tutorId })),
   });
 
-  return result;
+  return created;
 };
 
 export const TutorService = {
-  createTutorProfile,
   getAllTutors,
-  getSingleTutor,
+  getTutorById,
   updateTutorProfile,
-  deleteTutorProfile,
+  updateAvailability,
 };

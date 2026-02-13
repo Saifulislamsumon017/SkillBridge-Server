@@ -1,33 +1,24 @@
-import express from 'express';
+import { Router } from 'express';
+import { TutorController } from './tutor.controller';
 import auth from '../../middleware/auth';
 import { UserRole } from '../../constants/role';
-import { TutorController } from './tutor.controller';
 
-const router = express.Router();
+const router = Router();
 
-/**
- * Create Tutor Profile
- */
-router.post('/', auth(UserRole.USER), TutorController.createTutorProfile);
-
-/**
- * Public Routes
- */
+// Public Routes
 router.get('/', TutorController.getAllTutors);
-router.get('/:id', TutorController.getSingleTutor);
+router.get('/:id', TutorController.getTutorById);
 
-/**
- * Update Tutor
- */
-router.patch(
-  '/:id',
-  auth(UserRole.TUTOR, UserRole.ADMIN),
+// Private Routes (Tutor Only)
+router.put(
+  '/profile',
+  auth(UserRole.TUTOR),
   TutorController.updateTutorProfile,
 );
-
-/**
- * Delete Tutor
- */
-router.delete('/:id', auth(UserRole.ADMIN), TutorController.deleteTutorProfile);
+router.put(
+  '/availability',
+  auth(UserRole.TUTOR),
+  TutorController.updateAvailability,
+);
 
 export default router;

@@ -5,7 +5,9 @@ import { auth } from './lib/auth';
 import { notFound } from './middleware/notFound';
 import { errorHandler } from './middleware/errorHandler';
 import { env } from './config/env';
+
 import authRoutes from './module/auth/auth.routes';
+import categoryRoutes from './module/category/category.routes';
 import tutorRoutes from './module/tutor/tutor.routes';
 
 const app = express();
@@ -21,6 +23,7 @@ app.use(express.json());
 
 app.all('/api/auth/{*any}', toNodeHandler(auth));
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/tutors', tutorRoutes);
 
 app.get('/', (req: Request, res: Response) => {

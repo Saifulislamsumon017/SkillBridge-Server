@@ -9,6 +9,7 @@ import { env } from './config/env';
 import authRoutes from './module/auth/auth.routes';
 import categoryRoutes from './module/category/category.routes';
 import tutorRoutes from './module/tutor/tutor.routes';
+import bookingRoutes from './module/booking/booking.routes';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.all('/api/auth/{*any}', toNodeHandler(auth));
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/tutors', tutorRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
